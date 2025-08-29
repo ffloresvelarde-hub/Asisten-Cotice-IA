@@ -1,0 +1,5 @@
+{
+  "name": "Cotizador de Exportación Agroindustrial Perú",
+  "description": "Una aplicación para generar cotizaciones de exportación para productos agroindustriales peruanos, calculando costos basados en Incoterms y tipo de flete.",
+  "requestFramePermissions": []
+}
