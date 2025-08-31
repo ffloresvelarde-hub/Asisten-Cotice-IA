@@ -66,7 +66,11 @@ const App: React.FC = () => {
 
     } catch (e) {
       console.error(e);
-      setApiError('Ocurrió un error al generar la cotización. Esto puede deberse a una alta demanda o a un fallo temporal del servicio. Por favor, inténtalo de nuevo más tarde.');
+      if (e instanceof Error) {
+        setApiError(e.message);
+      } else {
+        setApiError('Ocurrió un error inesperado. Revisa la consola del navegador para más detalles.');
+      }
     } finally {
       setIsLoading(false);
     }

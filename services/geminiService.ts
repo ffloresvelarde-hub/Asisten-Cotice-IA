@@ -27,6 +27,28 @@ const checkAiInitialization = () => {
     }
 };
 
+/**
+ * A centralized error handler for Gemini API calls to provide more specific feedback.
+ * @param error The catched error.
+ * @param context A string describing where the error occurred (e.g., 'generateQuotation').
+ */
+const handleGeminiError = (error: unknown, context: string): never => {
+    console.error(`Error during Gemini API call in ${context}:`, error);
+    if (error instanceof Error) {
+        // Check for common API key-related error messages. A 400 error often indicates a problem with the API key.
+        if (error.message.includes('400') || error.message.toLowerCase().includes('api key not valid')) {
+            throw new Error('La API Key no es válida o está mal configurada en Netlify. Por favor, revisa que sea correcta, que no tenga restricciones de dominio (HTTP referrer) y que el proyecto de Google Cloud tenga la API "Generative Language" habilitada.');
+        }
+        if (error.message.includes('429')) {
+            throw new Error('Se ha excedido la cuota de uso de la API (límite de peticiones por minuto). Por favor, revisa tu plan en Google AI Studio o inténtalo más tarde.');
+        }
+        // For other errors, return the specific message from the SDK.
+        throw new Error(`Error en el servicio de IA (${context}): ${error.message}`);
+    }
+    // Fallback for non-Error exceptions
+    throw new Error(`Ocurrió un error inesperado en el servicio de IA (${context}).`);
+};
+
 
 const responseSchema = {
     type: Type.OBJECT,
@@ -195,8 +217,7 @@ export const generateQuotation = async (formData: QuotationFormState): Promise<F
     return parsedResponse;
 
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    throw new Error("Failed to generate quotation from AI service.");
+    handleGeminiError(error, 'generateQuotation');
   }
 };
 
@@ -224,8 +245,7 @@ export const getTariffCodeForProduct = async (productDescription: string): Promi
     return code;
 
   } catch (error) {
-    console.error("Error getting tariff code from Gemini API:", error);
-    throw new Error("No se pudo obtener la partida arancelaria.");
+    handleGeminiError(error, 'getTariffCode');
   }
 };
 
@@ -300,7 +320,6 @@ export const generateDocumentHtml = async (
         });
         return response.text.trim();
     } catch (error) {
-        console.error("Error generating document with Gemini API:", error);
-        throw new Error(`Failed to generate ${documentTitle} from AI service.`);
+        handleGeminiError(error, `generateDocument(${documentTitle})`);
     }
 };
