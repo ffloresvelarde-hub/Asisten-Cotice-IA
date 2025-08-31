@@ -5,8 +5,6 @@ import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { Spinner } from './ui/Spinner';
 
-declare const gtag: (...args: any[]) => void;
-
 interface TariffCodeAssistantProps {
   productName: string;
   onCodeFound: (code: string) => void;
@@ -34,12 +32,6 @@ export const TariffCodeAssistant: React.FC<TariffCodeAssistantProps> = ({ produc
         setError(null);
         try {
             const code = await getTariffCodeForProduct(productDescription);
-            if (typeof gtag === 'function') {
-              gtag('event', 'find_tariff_code', {
-                'event_category': 'engagement',
-                'event_label': productDescription
-              });
-            }
             onCodeFound(code);
             setIsModalOpen(false);
         } catch (e) {

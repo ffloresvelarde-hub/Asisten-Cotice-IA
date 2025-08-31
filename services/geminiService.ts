@@ -17,8 +17,16 @@ async function callGeminiProxy(action: string, payload: unknown): Promise<any> {
     });
 
     if (!response.ok) {
-      const errorBody = await response.json();
-      throw new Error(errorBody.error || `Error en la llamada a la API (${response.status})`);
+      let errorMessage = `Error en el servidor: ${response.status} ${response.statusText}`;
+      try {
+        const errorBody = await response.json();
+        errorMessage = errorBody.error || errorMessage;
+      } catch (e) {
+        // El cuerpo no era JSON, lo que puede ocurrir con timeouts (504) o errores de gateway (502).
+        // El mensaje de estado es suficiente para el usuario en este caso.
+        console.error("La respuesta de error del servidor no era JSON. Status:", response.status);
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();

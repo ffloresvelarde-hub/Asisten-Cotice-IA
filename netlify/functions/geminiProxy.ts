@@ -116,14 +116,27 @@ const handleGenerateQuotation = async (ai: GoogleGenAI, formData: QuotationFormS
         }
     });
     
-    let jsonText = response.text.trim();
-    if (jsonText.startsWith('```json')) {
-        jsonText = jsonText.slice(7, -3).trim();
-    } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.slice(3, -3).trim();
+    const rawText = response.text.trim();
+
+    // Busca el inicio y el fin del objeto JSON. Esto es más robusto que solo limpiar las vallas de markdown.
+    const startIndex = rawText.indexOf('{');
+    const endIndex = rawText.lastIndexOf('}');
+
+    if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
+        console.error("La respuesta de la IA no contenía un objeto JSON válido:", rawText);
+        throw new Error("La respuesta de la IA no contenía un objeto JSON válido.");
     }
+
+    const jsonText = rawText.substring(startIndex, endIndex + 1);
     
-    return JSON.parse(jsonText) as FullQuotationResponse;
+    try {
+        return JSON.parse(jsonText) as FullQuotationResponse;
+    } catch (error) {
+        console.error("Error al parsear el JSON extraído de la respuesta de la IA:", error);
+        console.error("JSON extraído:", jsonText);
+        console.error("Respuesta original completa:", rawText);
+        throw new Error("Se recibió una respuesta malformada de la IA.");
+    }
 };
 
 const handleGetTariffCode = async (ai: GoogleGenAI, productDescription: string): Promise<string> => {
