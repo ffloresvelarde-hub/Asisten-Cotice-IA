@@ -7,6 +7,8 @@ import { Spinner } from './ui/Spinner';
 import type { QuotationFormState, QuotationResult, DocumentType, DocumentGenerationData } from '../types';
 import { generateDocumentHtml } from '../services/geminiService';
 
+declare const gtag: (...args: any[]) => void;
+
 interface DocumentGeneratorModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -93,6 +95,14 @@ export const DocumentGeneratorModal: React.FC<DocumentGeneratorModalProps> = ({
         try {
             // 2. Generate the content.
             const htmlContent = await generateDocumentHtml(documentType, fullData);
+
+            if (typeof gtag === 'function') {
+                gtag('event', 'generate_document', {
+                    'event_category': 'engagement',
+                    'event_label': documentType,
+                    'value': quotationData.costoTotal
+                });
+            }
 
             // 3. Write the final content to the already opened tab.
             newTab.document.open();

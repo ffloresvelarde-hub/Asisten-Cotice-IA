@@ -10,6 +10,8 @@ import { generateQuotation } from './services/geminiService';
 import { QuotationHistory } from './components/QuotationHistory';
 import { getHistory, addHistoryEntry, clearHistory } from './services/localStorageService';
 
+declare const gtag: (...args: any[]) => void;
+
 const loadingMessages = [
     'Analizando datos del producto...',
     'Calculando costos de flete internacional...',
@@ -27,7 +29,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     let messageIndex = 0;
-    let interval: NodeJS.Timeout | null = null;
+    // FIX: Replaced NodeJS.Timeout with ReturnType<typeof setInterval> for browser compatibility.
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (isLoading) {
         setCurrentLoadingMessage(loadingMessages[0]);
         interval = setInterval(() => {
@@ -62,6 +65,14 @@ const App: React.FC = () => {
       const updatedHistory = addHistoryEntry(newEntry);
       setHistory(updatedHistory);
 
+      if (typeof gtag === 'function') {
+        gtag('event', 'generate_quotation', {
+          'event_category': 'engagement',
+          'event_label': formData.product,
+          'value': formData.productionValue
+        });
+      }
+
     } catch (e) {
       console.error(e);
       setError('Hubo un error al generar la cotización. Por favor, revisa la consola para más detalles y asegúrate que la clave de API está configurada.');
@@ -80,12 +91,23 @@ const App: React.FC = () => {
     setQuotationData(entry.result);
     setCurrentFormData(entry.formData);
     setError(null);
+    if (typeof gtag === 'function') {
+      gtag('event', 'view_history', {
+        'event_category': 'engagement',
+        'event_label': entry.formData.product
+      });
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleClearHistory = useCallback(() => {
     clearHistory();
     setHistory([]);
+    if (typeof gtag === 'function') {
+        gtag('event', 'clear_history', {
+          'event_category': 'engagement'
+        });
+    }
   }, []);
 
 
