@@ -1,11 +1,32 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuotationFormState, FullQuotationResponse, QuotationResult, Incoterm, Scenario, DocumentGenerationData, DocumentType } from '../types';
 
-if (!process.env.API_KEY) {
-    throw new Error("Missing API_KEY environment variable");
+// Defensive initialization for browser environments where process.env might not be polyfilled
+// or the API_KEY is not injected during build.
+let ai: GoogleGenAI | undefined;
+
+// The build environment (like Netlify) is expected to replace process.env.API_KEY.
+// If it doesn't, this will be undefined, and `ai` will remain undefined,
+// preventing a top-level crash that results in a blank page.
+const apiKey = process.env.API_KEY;
+if (apiKey) {
+    try {
+        ai = new GoogleGenAI({ apiKey });
+    } catch (e) {
+        console.error("Error during GoogleGenAI initialization. Make sure the API Key is valid.", e);
+    }
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+/**
+ * Checks if the GoogleGenAI client was initialized.
+ * Throws a user-friendly error if it's not.
+ */
+const checkAiInitialization = () => {
+    if (!ai) {
+        throw new Error("La API Key no está configurada en el entorno de despliegue (Netlify). Por favor, ve a 'Site configuration' > 'Build & deploy' > 'Environment' y asegúrate de que la variable de entorno 'API_KEY' esté creada y con el valor correcto. Después de agregarla, debes hacer un nuevo 'deploy' para que los cambios se apliquen.");
+    }
+};
+
 
 const responseSchema = {
     type: Type.OBJECT,
@@ -92,6 +113,7 @@ const responseSchema = {
 
 
 export const generateQuotation = async (formData: QuotationFormState): Promise<FullQuotationResponse> => {
+  checkAiInitialization();
   const { 
     product, tariffCode, destinationCountry, quantity, quantityUnit, productionValue, incoterms,
     empresa, ruc, direccion, correo
@@ -144,7 +166,7 @@ export const generateQuotation = async (formData: QuotationFormState): Promise<F
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await ai!.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -179,6 +201,7 @@ export const generateQuotation = async (formData: QuotationFormState): Promise<F
 };
 
 export const getTariffCodeForProduct = async (productDescription: string): Promise<string> => {
+  checkAiInitialization();
   const prompt = `
     Actúa como un experto en aduanas de Perú. 
     Basado en la siguiente descripción de producto, proporciona únicamente la partida arancelaria peruana más probable en el formato XXXX.XX.XX.XX.
@@ -187,7 +210,7 @@ export const getTariffCodeForProduct = async (productDescription: string): Promi
     Descripción del producto: "${productDescription}"
   `;
   try {
-    const response = await ai.models.generateContent({
+    const response = await ai!.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
     });
@@ -211,6 +234,7 @@ export const generateDocumentHtml = async (
     documentType: DocumentType,
     data: DocumentGenerationData
 ): Promise<string> => {
+    checkAiInitialization();
     const documentTitle = documentType === 'commercialInvoice' ? 'Factura Comercial' : 'Packing List';
     const mainPrompt = `
         Actúa como un experto en documentación de comercio internacional. Tu tarea es generar un documento HTML completo y profesional para una '${documentTitle}'.
@@ -270,7 +294,7 @@ export const generateDocumentHtml = async (
     `;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await ai!.models.generateContent({
             model: "gemini-2.5-flash",
             contents: mainPrompt,
         });
