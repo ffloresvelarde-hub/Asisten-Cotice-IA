@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 let ai;
 
-const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+const apiKey = (window as any).process?.env?.API_KEY;
 
 if (apiKey) {
     try {
