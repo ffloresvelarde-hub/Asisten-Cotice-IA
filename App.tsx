@@ -7,8 +7,6 @@ import { Footer } from './components/Footer';
 import { generateQuotation } from './services/geminiService';
 import { QuotationHistory } from './components/QuotationHistory';
 import { getHistory, addHistoryEntry, clearHistory } from './services/localStorageService';
-// FIX: Import types for state to ensure type safety.
-import type { QuotationFormState, FullQuotationResponse } from './types';
 
 const loadingMessages = [
     'Analizando datos del producto...',
@@ -18,9 +16,8 @@ const loadingMessages = [
 ];
 
 const App = () => {
-  // FIX: Typed state to avoid 'any' type and allow for better type inference downstream.
-  const [quotationData, setQuotationData] = useState<FullQuotationResponse | null>(null);
-  const [currentFormData, setCurrentFormData] = useState<QuotationFormState | null>(null);
+  const [quotationData, setQuotationData] = useState(null);
+  const [currentFormData, setCurrentFormData] = useState(null);
   const [history, setHistory] = useState(() => getHistory());
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);

@@ -1,6 +1,5 @@
 import React from 'react';
 
-// FIX: Added a default value to the error prop to make it optional.
 export const Textarea = ({ label, id, error = null, ...props }) => {
   const errorClasses = error
     ? 'border-red-500 focus:ring-red-500 focus:border-red-500'

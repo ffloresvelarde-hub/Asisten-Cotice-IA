@@ -1,13 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Defensive initialization for browser environments where process.env might not be polyfilled
-// or the API_KEY is not injected during build.
 let ai;
 
-// The build environment (like Netlify) is expected to replace process.env.API_KEY.
-// If it doesn't, this will be undefined, and `ai` will remain undefined,
-// preventing a top-level crash that results in a blank page.
-const apiKey = process.env.API_KEY;
+// This code safely accesses the API key.
+// In a browser environment, `process` is not defined, which would normally cause a crash.
+// This check looks for a `process` object that might have been injected by the deployment platform (like Netlify).
+// If it's not found, `apiKey` will be undefined, and the app will show a friendly error instead of a blank screen.
+const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+
 if (apiKey) {
     try {
         ai = new GoogleGenAI({ apiKey });

@@ -51,7 +51,6 @@ export const TariffCodeAssistant = ({ productName, onCodeFound }) => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Asistente de Partida Arancelaria">
                 <div className="space-y-4">
                     <p className="text-slate-600">Describe tu producto y la IA encontrará la partida arancelaria más probable para la aduana peruana.</p>
-                    {/* FIX: Pass error state to Input and clear it on change. */}
                     <Input 
                         label="Descripción del Producto"
                         id="product-description"

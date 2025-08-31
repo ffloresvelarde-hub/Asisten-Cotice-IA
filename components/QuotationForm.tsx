@@ -31,7 +31,7 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
     correo: '',
   });
 
-  // FIX: Typed formErrors state to allow for dynamic string keys.
+  // FIX: Explicitly type the formErrors state to prevent TypeScript from inferring it as an empty object type (`{}`).
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e) => {
@@ -90,7 +90,7 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // FIX: Typed errors object to allow for dynamic string keys.
+    // FIX: Explicitly type the errors object to allow adding properties dynamically.
     const errors: Record<string, string> = {};
     if (!formData.empresa.trim()) errors.empresa = "El nombre de la empresa es requerido.";
     if (!formData.ruc.trim()) {

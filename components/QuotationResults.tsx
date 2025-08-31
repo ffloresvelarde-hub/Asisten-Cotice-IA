@@ -3,6 +3,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { DonutChart } from './ui/DonutChart';
 import { DocumentGeneratorModal } from './DocumentGeneratorModal';
+import { FormData, QuotationResultsData } from '../types';
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -131,7 +132,15 @@ const COST_LABELS = {
 };
 
 
-export const QuotationResults = ({ results, formData, onReset }) => {
+// FIX: Define and apply a props interface to ensure 'results' and its nested properties are correctly typed,
+// resolving an error where a value was inferred as 'unknown' and could not be compared to a number.
+interface QuotationResultsProps {
+  results: QuotationResultsData;
+  formData: FormData;
+  onReset: () => void;
+}
+
+export const QuotationResults = ({ results, formData, onReset }: QuotationResultsProps) => {
   const { quotations, recommendations, scenarioAnalysis } = results;
 
   const [modalState, setModalState] = useState({

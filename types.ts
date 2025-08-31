@@ -1,21 +1,3 @@
-
-export type Incoterm = 'EXW' | 'FOB' | 'CIF';
-export type DocumentType = 'commercialInvoice' | 'packingList';
-
-export interface QuotationFormState {
-  product: string;
-  tariffCode: string;
-  destinationCountry: string;
-  quantity: number;
-  quantityUnit: 'toneladas' | 'kilogramos' | 'unidades';
-  productionValue: number;
-  incoterms: Incoterm[];
-  empresa: string;
-  ruc: string;
-  direccion: string;
-  correo: string;
-}
-
 export interface CostBreakdown {
   valorProduccion: number;
   transporteLocal: number;
@@ -24,9 +6,13 @@ export interface CostBreakdown {
   seguro: number;
 }
 
-export interface QuotationResult {
+export type Incoterm = 'EXW' | 'FOB' | 'CIF';
+export type FreightType = 'Marítimo' | 'Aéreo' | 'No Aplica';
+export type ScenarioOption = 'Marítimo' | 'Aéreo' | 'Courier';
+
+export interface Quotation {
   incoterm: Incoterm;
-  flete: 'Marítimo' | 'Aéreo' | 'No Aplica';
+  flete: FreightType;
   costoTotal: number;
   tiempoTransito: string;
   desgloseCostos: CostBreakdown;
@@ -39,7 +25,7 @@ export interface Recommendations {
 }
 
 export interface Scenario {
-  option: 'Marítimo' | 'Aéreo' | 'Courier';
+  option: ScenarioOption;
   rank: number;
   isRecommended: boolean;
   costoEstimado: string;
@@ -49,43 +35,22 @@ export interface Scenario {
   contras: string[];
 }
 
-export interface FullQuotationResponse {
-  quotations: QuotationResult[];
+export interface QuotationResultsData {
+  quotations: Quotation[];
   recommendations: Recommendations;
   scenarioAnalysis: Scenario[];
 }
 
-export interface HistoryEntry {
-  id: number; // Using timestamp as a unique ID
-  formData: QuotationFormState;
-  result: FullQuotationResponse;
-}
-
-// --- Document Generation Types ---
-
-export interface ImporterDetails {
-    companyName: string;
-    taxId: string;
-    address: string;
-}
-
-export interface PackagingDetails {
-    packageCount: number;
-    packageType: string;
-    netWeightKg: number;
-    grossWeightKg: number;
-    dimensions: string; // e.g., "120x100x110 cm per pallet"
-}
-
-export interface DocumentGenerationData {
-    exporter: QuotationFormState;
-    importer: ImporterDetails;
-    shipment: {
-        invoiceNumber: string;
-        issueDate: string;
-        incoterm: Incoterm;
-        totalValue: number;
-        freightType: 'Marítimo' | 'Aéreo' | 'No Aplica';
-    };
-    packaging: PackagingDetails;
+export interface FormData {
+    product: string;
+    tariffCode: string;
+    destinationCountry: string;
+    quantity: number;
+    quantityUnit: string;
+    productionValue: number;
+    incoterms: string[];
+    empresa: string;
+    ruc: string;
+    direccion: string;
+    correo: string;
 }
