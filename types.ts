@@ -1,47 +1,43 @@
 export interface CostBreakdown {
-  valorProduccion: number;
-  transporteLocal: number;
-  gastosAduanaExportacion: number;
-  fleteInternacional: number;
-  seguro: number;
+    valorProduccion: number;
+    transporteLocal: number;
+    gastosAduanaExportacion: number;
+    fleteInternacional: number;
+    seguro: number;
 }
 
-export type Incoterm = 'EXW' | 'FOB' | 'CIF';
-export type FreightType = 'Marítimo' | 'Aéreo' | 'No Aplica';
-export type ScenarioOption = 'Marítimo' | 'Aéreo' | 'Courier';
-
 export interface Quotation {
-  incoterm: Incoterm;
-  flete: FreightType;
-  costoTotal: number;
-  tiempoTransito: string;
-  desgloseCostos: CostBreakdown;
+    incoterm: 'EXW' | 'FOB' | 'CIF';
+    flete: 'Marítimo' | 'Aéreo' | 'No Aplica';
+    costoTotal: number;
+    tiempoTransito: string;
+    desgloseCostos: CostBreakdown;
 }
 
 export interface Recommendations {
-  seasonal: string;
-  container: string;
-  strategy: string;
+    seasonal: string;
+    container: string;
+    strategy: string;
 }
 
 export interface Scenario {
-  option: ScenarioOption;
-  rank: number;
-  isRecommended: boolean;
-  costoEstimado: string;
-  tiempoEstimado: string;
-  analisisCualitativo: string;
-  pros: string[];
-  contras: string[];
+    option: 'Marítimo' | 'Aéreo' | 'Courier';
+    rank: number;
+    isRecommended: boolean;
+    costoEstimado: string;
+    tiempoEstimado: string;
+    analisisCualitativo: string;
+    pros: string[];
+    contras: string[];
 }
 
 export interface QuotationResultsData {
-  quotations: Quotation[];
-  recommendations: Recommendations;
-  scenarioAnalysis: Scenario[];
+    quotations: Quotation[];
+    recommendations: Recommendations;
+    scenarioAnalysis: Scenario[];
 }
 
-export interface FormData {
+export interface QuotationFormData {
     product: string;
     tariffCode: string;
     destinationCountry: string;
@@ -53,4 +49,10 @@ export interface FormData {
     ruc: string;
     direccion: string;
     correo: string;
+}
+
+export interface HistoryEntry {
+    id: number;
+    formData: QuotationFormData;
+    result: QuotationResultsData;
 }

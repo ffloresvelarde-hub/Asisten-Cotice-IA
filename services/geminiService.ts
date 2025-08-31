@@ -2,10 +2,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 let ai;
 
-// This code safely accesses the API key.
-// In a browser environment, `process` is not defined, which would normally cause a crash.
-// This check looks for a `process` object that might have been injected by the deployment platform (like Netlify).
-// If it's not found, `apiKey` will be undefined, and the app will show a friendly error instead of a blank screen.
 const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
 
 if (apiKey) {
@@ -16,35 +12,23 @@ if (apiKey) {
     }
 }
 
-/**
- * Checks if the GoogleGenAI client was initialized.
- * Throws a user-friendly error if it's not.
- */
 const checkAiInitialization = () => {
     if (!ai) {
         throw new Error("La API Key no está configurada en el entorno de despliegue (Netlify). Por favor, ve a 'Site configuration' > 'Build & deploy' > 'Environment' y asegúrate de que la variable de entorno 'API_KEY' esté creada y con el valor correcto. Después de agregarla, debes hacer un nuevo 'deploy' para que los cambios se apliquen.");
     }
 };
 
-/**
- * A centralized error handler for Gemini API calls to provide more specific feedback.
- * @param error The catched error.
- * @param context A string describing where the error occurred (e.g., 'generateQuotation').
- */
 const handleGeminiError = (error, context) => {
     console.error(`Error during Gemini API call in ${context}:`, error);
     if (error instanceof Error) {
-        // Check for common API key-related error messages. A 400 error often indicates a problem with the API key.
         if (error.message.includes('400') || error.message.toLowerCase().includes('api key not valid')) {
             throw new Error('La API Key no es válida o está mal configurada en Netlify. Por favor, revisa que sea correcta, que no tenga restricciones de dominio (HTTP referrer) y que el proyecto de Google Cloud tenga la API "Generative Language" habilitada.');
         }
         if (error.message.includes('429')) {
             throw new Error('Se ha excedido la cuota de uso de la API (límite de peticiones por minuto). Por favor, revisa tu plan en Google AI Studio o inténtalo más tarde.');
         }
-        // For other errors, return the specific message from the SDK.
         throw new Error(`Error en el servicio de IA (${context}): ${error.message}`);
     }
-    // Fallback for non-Error exceptions
     throw new Error(`Ocurrió un error inesperado en el servicio de IA (${context}).`);
 };
 
@@ -199,7 +183,6 @@ export const generateQuotation = async (formData) => {
     const jsonText = response.text.trim();
     const parsedResponse = JSON.parse(jsonText);
 
-    // Sort to ensure a consistent order: EXW, FOB, CIF and then by freight type
     const incotermOrder = { 'EXW': 1, 'FOB': 2, 'CIF': 3 };
     const fleteOrder = { 'Marítimo': 1, 'Aéreo': 2, 'No Aplica': 0 };
 

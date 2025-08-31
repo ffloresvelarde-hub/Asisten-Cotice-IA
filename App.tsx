@@ -7,6 +7,8 @@ import { Footer } from './components/Footer';
 import { generateQuotation } from './services/geminiService';
 import { QuotationHistory } from './components/QuotationHistory';
 import { getHistory, addHistoryEntry, clearHistory } from './services/localStorageService';
+// FIX: Import types for state management.
+import { QuotationResultsData, QuotationFormData, HistoryEntry } from './types';
 
 const loadingMessages = [
     'Analizando datos del producto...',
@@ -16,17 +18,18 @@ const loadingMessages = [
 ];
 
 const App = () => {
-  const [quotationData, setQuotationData] = useState(null);
-  const [currentFormData, setCurrentFormData] = useState(null);
-  const [history, setHistory] = useState(() => getHistory());
+  // FIX: Type component state for better type safety.
+  const [quotationData, setQuotationData] = useState<QuotationResultsData | null>(null);
+  const [currentFormData, setCurrentFormData] = useState<QuotationFormData | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>(() => getHistory());
   const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState(null);
-  const [validationError, setValidationError] = useState(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
 
   useEffect(() => {
     let messageIndex = 0;
-    let interval = null;
+    let interval: NodeJS.Timeout | null = null;
     if (isLoading) {
         setCurrentLoadingMessage(loadingMessages[0]);
         interval = setInterval(() => {
@@ -42,7 +45,8 @@ const App = () => {
     };
   }, [isLoading]);
 
-  const handleFormSubmit = useCallback(async (formData) => {
+  // FIX: Type the formData parameter.
+  const handleFormSubmit = useCallback(async (formData: QuotationFormData) => {
     if (formData.incoterms.length === 0) {
         setValidationError("Por favor, selecciona al menos un Incoterm para cotizar.");
         return;
@@ -81,7 +85,8 @@ const App = () => {
     setValidationError(null);
   }, []);
 
-  const handleViewHistory = useCallback((entry) => {
+  // FIX: Type the entry parameter.
+  const handleViewHistory = useCallback((entry: HistoryEntry) => {
     setQuotationData(entry.result);
     setCurrentFormData(entry.formData);
     setApiError(null);

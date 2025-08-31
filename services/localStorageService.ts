@@ -15,7 +15,6 @@ export const getHistory = () => {
 
 export const addHistoryEntry = (entry) => {
     const currentHistory = getHistory();
-    // Add to the beginning and limit history size to 20 entries
     const newHistory = [entry, ...currentHistory].slice(0, 20);
     try {
         localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));

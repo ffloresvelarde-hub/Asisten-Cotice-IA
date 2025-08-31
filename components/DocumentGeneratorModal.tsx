@@ -60,7 +60,6 @@ export const DocumentGeneratorModal = ({
         setIsLoading(true);
         setError(null);
 
-        // 1. Open the new tab immediately to avoid pop-up blockers.
         const newTab = window.open('', '_blank');
         if (!newTab) {
             setError("No se pudo abrir una nueva pestaña. Por favor, deshabilita el bloqueador de pop-ups.");
@@ -82,10 +81,8 @@ export const DocumentGeneratorModal = ({
         };
         
         try {
-            // 2. Generate the content.
             const htmlContent = await generateDocumentHtml(documentType, fullData);
 
-            // 3. Write the final content to the already opened tab.
             newTab.document.open();
             newTab.document.write(htmlContent);
             newTab.document.close();
@@ -94,7 +91,6 @@ export const DocumentGeneratorModal = ({
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : `Error generando el documento.`;
             setError(errorMessage);
-            // Update the new tab with an error message as well.
             newTab.document.open();
             newTab.document.write(`<html><body style="font-family: sans-serif; padding: 2rem;"><h2>Error al generar documento</h2><p>${errorMessage}</p><p>Por favor, intenta de nuevo. Puedes cerrar esta pestaña.</p></body></html>`);
             newTab.document.close();

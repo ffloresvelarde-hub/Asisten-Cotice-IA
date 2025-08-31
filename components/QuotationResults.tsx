@@ -3,9 +3,10 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { DonutChart } from './ui/DonutChart';
 import { DocumentGeneratorModal } from './DocumentGeneratorModal';
-import { FormData, QuotationResultsData } from '../types';
+// FIX: Import types for props to ensure type safety.
+import { QuotationResultsData, QuotationFormData, Quotation } from '../types';
 
-const formatCurrency = (value) => {
+const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -13,9 +14,9 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
-const IncotermIcon = ({ incoterm }) => {
+const IncotermIcon = ({ incoterm }: { incoterm: string }) => {
     const baseClasses = "w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg";
-    const colors = {
+    const colors: { [key: string]: string } = {
         'EXW': 'bg-amber-500',
         'FOB': 'bg-sky-600',
         'CIF': 'bg-emerald-500',
@@ -25,7 +26,7 @@ const IncotermIcon = ({ incoterm }) => {
 
 const CourierIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 12H4m16 0-4 4m4-4-4-4M4 12l4 4m-4-4 4-4" /><path d="M5 8h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /></svg>;
 
-const FreightIcon = ({ type }) => {
+const FreightIcon = ({ type }: { type: string }) => {
     if (type === 'Marítimo') {
         return <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
     }
@@ -38,7 +39,7 @@ const FreightIcon = ({ type }) => {
     return null;
 }
 
-const RecommendationCard = ({ title, content, icon }) => (
+const RecommendationCard = ({ title, content, icon }: { title: string, content: string, icon: React.ReactNode }) => (
     <Card className="bg-slate-100/70 border border-slate-200 !shadow-md">
         <div className="flex items-start gap-4">
             <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
@@ -55,7 +56,7 @@ const RecommendationCard = ({ title, content, icon }) => (
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>;
 const CrossIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
 
-const ScenarioCard = ({ scenario }) => {
+const ScenarioCard = ({ scenario }: { scenario: any }) => {
     const { option, rank, isRecommended, costoEstimado, tiempoEstimado, analisisCualitativo, pros, contras } = scenario;
 
     return (
@@ -91,7 +92,7 @@ const ScenarioCard = ({ scenario }) => {
                 <div>
                     <h5 className="font-semibold text-slate-700 mb-2">Ventajas</h5>
                     <ul className="space-y-1">
-                        {pros.map((pro, i) => (
+                        {pros.map((pro: string, i: number) => (
                             <li key={i} className="flex items-start gap-2 text-slate-600 text-sm">
                                 <CheckIcon />
                                 <span>{pro}</span>
@@ -102,7 +103,7 @@ const ScenarioCard = ({ scenario }) => {
                 <div>
                     <h5 className="font-semibold text-slate-700 mb-2">Desventajas</h5>
                     <ul className="space-y-1">
-                        {contras.map((contra, i) => (
+                        {contras.map((contra: string, i: number) => (
                             <li key={i} className="flex items-start gap-2 text-slate-600 text-sm">
                                 <CrossIcon />
                                 <span>{contra}</span>
@@ -115,15 +116,15 @@ const ScenarioCard = ({ scenario }) => {
     );
 };
 
-const COST_COLORS = {
-    valorProduccion: '#0ea5e9', // sky-500
-    transporteLocal: '#f97316', // orange-500
-    gastosAduanaExportacion: '#8b5cf6', // violet-500
-    fleteInternacional: '#ec4899', // pink-500
-    seguro: '#10b981', // emerald-500
+const COST_COLORS: { [key: string]: string } = {
+    valorProduccion: '#0ea5e9',
+    transporteLocal: '#f97316',
+    gastosAduanaExportacion: '#8b5cf6',
+    fleteInternacional: '#ec4899',
+    seguro: '#10b981',
 };
 
-const COST_LABELS = {
+const COST_LABELS: { [key: string]: string } = {
     valorProduccion: 'Producción',
     transporteLocal: 'T. Local',
     gastosAduanaExportacion: 'Aduanas',
@@ -131,25 +132,17 @@ const COST_LABELS = {
     seguro: 'Seguro'
 };
 
-
-// FIX: Define and apply a props interface to ensure 'results' and its nested properties are correctly typed,
-// resolving an error where a value was inferred as 'unknown' and could not be compared to a number.
-interface QuotationResultsProps {
-  results: QuotationResultsData;
-  formData: FormData;
-  onReset: () => void;
-}
-
-export const QuotationResults = ({ results, formData, onReset }: QuotationResultsProps) => {
+// FIX: Add types for the component props.
+export const QuotationResults = ({ results, formData, onReset }: { results: QuotationResultsData, formData: QuotationFormData, onReset: () => void }) => {
   const { quotations, recommendations, scenarioAnalysis } = results;
 
-  const [modalState, setModalState] = useState({
+  const [modalState, setModalState] = useState<{ isOpen: boolean, type: 'packingList' | 'commercialInvoice' | null, quotation: Quotation | null }>({
       isOpen: false,
       type: null,
       quotation: null,
   });
 
-  const handleOpenModal = (type, quotation) => {
+  const handleOpenModal = (type: 'packingList' | 'commercialInvoice', quotation: Quotation) => {
       setModalState({ isOpen: true, type, quotation });
   };
 
@@ -166,6 +159,7 @@ export const QuotationResults = ({ results, formData, onReset }: QuotationResult
       
       <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
         {quotations.map((result, index) => {
+           // FIX: With typed props, `value` is now correctly inferred as a number, allowing comparison.
            const chartData = Object.entries(result.desgloseCostos)
                 .filter(([, value]) => value > 0)
                 .map(([key, value]) => ({

@@ -7,16 +7,27 @@ import { TariffCodeAssistant } from './TariffCodeAssistant';
 
 const INCOTERM_OPTIONS = ['EXW', 'FOB', 'CIF'];
 
-const validateTariffCode = (code) => {
-  // Validates format XXXX.XX.XX.XX based on the initial value and common Peruvian HS codes.
+const validateTariffCode = (code: string) => {
   const tariffCodeRegex = /^\d{4}\.\d{2}\.\d{2}\.\d{2}$/;
   return tariffCodeRegex.test(code);
 };
-const validateRUC = (ruc) => /^\d{11}$/.test(ruc);
-const validateEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
+const validateRUC = (ruc: string) => /^\d{11}$/.test(ruc);
+const validateEmail = (email: string) => /^\S+@\S+\.\S+$/.test(email);
 
+// FIX: Define an interface for form errors to provide type safety.
+interface FormErrors {
+  product?: string;
+  tariffCode?: string;
+  destinationCountry?: string;
+  quantity?: string;
+  productionValue?: string;
+  empresa?: string;
+  ruc?: string;
+  direccion?: string;
+  correo?: string;
+}
 
-export const QuotationForm = ({ onSubmit, initialError }) => {
+export const QuotationForm = ({ onSubmit, initialError }: { onSubmit: (data: any) => void, initialError: string | null }) => {
   const [formData, setFormData] = useState({
     product: 'Palta Hass',
     tariffCode: '0804.40.00.00',
@@ -31,10 +42,10 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
     correo: '',
   });
 
-  // FIX: Explicitly type the formErrors state to prevent TypeScript from inferring it as an empty object type (`{}`).
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  // FIX: Type the formErrors state.
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const isNumberField = ['quantity', 'productionValue'].includes(name);
 
@@ -43,7 +54,7 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
       [name]: isNumberField ? parseFloat(value) || 0 : value,
     }));
     
-    const clearError = (fieldName) => {
+    const clearError = (fieldName: keyof FormErrors) => {
         setFormErrors(prev => {
             const newErrors = { ...prev };
             delete newErrors[fieldName];
@@ -51,7 +62,6 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
         });
     };
     
-    // Real-time validation for formats and clearing errors
     if (name === 'tariffCode') {
         if (value && !validateTariffCode(value)) {
             setFormErrors(prev => ({ ...prev, tariffCode: 'Formato incorrecto. Debe ser XXXX.XX.XX.XX' }));
@@ -65,11 +75,11 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
             setFormErrors(prev => ({ ...prev, correo: 'Formato de correo inválido.' }));
         } else { clearError('correo'); }
     } else if (value.trim()) {
-        clearError(name);
+        clearError(name as keyof FormErrors);
     }
   };
 
-  const handleIncotermChange = (incoterm) => {
+  const handleIncotermChange = (incoterm: string) => {
     setFormData(prev => {
         const newIncoterms = prev.incoterms.includes(incoterm)
             ? prev.incoterms.filter(i => i !== incoterm)
@@ -78,7 +88,7 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
     });
   }
 
-  const handleTariffCodeFound = (code) => {
+  const handleTariffCodeFound = (code: string) => {
     setFormData(prev => ({ ...prev, tariffCode: code }));
     setFormErrors(prev => {
         const newErrors = { ...prev };
@@ -87,11 +97,11 @@ export const QuotationForm = ({ onSubmit, initialError }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // FIX: Explicitly type the errors object to allow adding properties dynamically.
-    const errors: Record<string, string> = {};
+    // FIX: Type the errors object.
+    const errors: FormErrors = {};
     if (!formData.empresa.trim()) errors.empresa = "El nombre de la empresa es requerido.";
     if (!formData.ruc.trim()) {
         errors.ruc = "El RUC es requerido.";

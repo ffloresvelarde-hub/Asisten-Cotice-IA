@@ -13,7 +13,7 @@ export const DonutChart = ({ data, size = 120, strokeWidth = 18 }) => {
                     cy={size / 2}
                     r={radius}
                     fill="transparent"
-                    stroke="#e2e8f0" // slate-200
+                    stroke="#e2e8f0"
                     strokeWidth={strokeWidth}
                 />
             </svg>
