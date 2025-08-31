@@ -1,7 +1,6 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuotationFormState, FullQuotationResponse, DocumentGenerationData, DocumentType } from '../../types';
-
-// FIX: Moved helper functions before their usage to resolve "Cannot find name" errors.
 
 // --- Funciones para construir los prompts ---
 
@@ -113,11 +112,17 @@ const handleGenerateQuotation = async (ai: GoogleGenAI, formData: QuotationFormS
         contents: prompt,
         config: {
             responseMimeType: "application/json",
-            responseSchema: getResponseSchema() // Usamos una función para mantener el código limpio
+            responseSchema: getResponseSchema()
         }
     });
-
-    const jsonText = response.text.trim();
+    
+    let jsonText = response.text.trim();
+    if (jsonText.startsWith('```json')) {
+        jsonText = jsonText.slice(7, -3).trim();
+    } else if (jsonText.startsWith('```')) {
+        jsonText = jsonText.slice(3, -3).trim();
+    }
+    
     return JSON.parse(jsonText) as FullQuotationResponse;
 };
 
@@ -129,12 +134,16 @@ const handleGetTariffCode = async (ai: GoogleGenAI, productDescription: string):
         contents: prompt,
     });
     
-    const code = response.text.trim();
-    const tariffCodeRegex = /^\d{4}\.\d{2}\.\d{2}\.\d{2}$/;
-    if (!tariffCodeRegex.test(code)) {
-        throw new Error(`Formato de partida arancelaria inválido recibido de la IA.`);
+    const responseText = response.text.trim();
+    const tariffCodeRegex = /\d{4}\.\d{2}\.\d{2}\.\d{2}/;
+    const match = responseText.match(tariffCodeRegex);
+
+    if (!match) {
+        console.error("No se pudo encontrar una partida arancelaria válida en la respuesta de la IA:", responseText);
+        throw new Error(`No se pudo extraer una partida arancelaria válida de la respuesta.`);
     }
-    return code;
+    
+    return match[0];
 };
 
 const handleGenerateDocument = async (ai: GoogleGenAI, documentType: DocumentType, data: DocumentGenerationData): Promise<string> => {
@@ -143,7 +152,14 @@ const handleGenerateDocument = async (ai: GoogleGenAI, documentType: DocumentTyp
         model: "gemini-2.5-flash",
         contents: prompt,
     });
-    return response.text.trim();
+    
+    let html = response.text.trim();
+    if (html.startsWith('```html')) {
+        html = html.slice(7, -3).trim();
+    } else if (html.startsWith('```')) {
+        html = html.slice(3, -3).trim();
+    }
+    return html;
 };
 
 // El handler principal que Netlify ejecutará

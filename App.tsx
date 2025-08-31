@@ -24,12 +24,12 @@ const App: React.FC = () => {
   const [currentFormData, setCurrentFormData] = useState<QuotationFormState | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>(() => getHistory());
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
 
   useEffect(() => {
     let messageIndex = 0;
-    // FIX: Replaced NodeJS.Timeout with ReturnType<typeof setInterval> for browser compatibility.
     let interval: ReturnType<typeof setInterval> | null = null;
     if (isLoading) {
         setCurrentLoadingMessage(loadingMessages[0]);
@@ -48,11 +48,12 @@ const App: React.FC = () => {
 
   const handleFormSubmit = useCallback(async (formData: QuotationFormState) => {
     if (formData.incoterms.length === 0) {
-        setError("Por favor, selecciona al menos un Incoterm para cotizar.");
+        setValidationError("Por favor, selecciona al menos un Incoterm para cotizar.");
         return;
     }
     setIsLoading(true);
-    setError(null);
+    setApiError(null);
+    setValidationError(null);
     setQuotationData(null);
     setCurrentFormData(null);
 
@@ -75,7 +76,7 @@ const App: React.FC = () => {
 
     } catch (e) {
       console.error(e);
-      setError('Hubo un error al generar la cotización. Por favor, revisa la consola para más detalles y asegúrate que la clave de API está configurada.');
+      setApiError('Hubo un error al generar la cotización. Por favor, revisa la consola para más detalles y asegúrate que la clave de API está configurada.');
     } finally {
       setIsLoading(false);
     }
@@ -84,13 +85,15 @@ const App: React.FC = () => {
   const handleReset = useCallback(() => {
     setQuotationData(null);
     setCurrentFormData(null);
-    setError(null);
+    setApiError(null);
+    setValidationError(null);
   }, []);
 
   const handleViewHistory = useCallback((entry: HistoryEntry) => {
     setQuotationData(entry.result);
     setCurrentFormData(entry.formData);
-    setError(null);
+    setApiError(null);
+    setValidationError(null);
     if (typeof gtag === 'function') {
       gtag('event', 'view_history', {
         'event_category': 'engagement',
@@ -118,7 +121,18 @@ const App: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           {!quotationData && !isLoading && (
             <div className="space-y-8">
-                <QuotationForm onSubmit={handleFormSubmit} initialError={error} />
+                <QuotationForm onSubmit={handleFormSubmit} initialError={validationError} />
+                {apiError && !isLoading && (
+                     <div className="text-center p-8 bg-red-50 border border-red-200 rounded-xl shadow-md">
+                      <p className="text-red-600 font-semibold">{apiError}</p>
+                      <button
+                        onClick={() => setApiError(null)}
+                        className="mt-4 px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
+                      >
+                        Entendido
+                      </button>
+                    </div>
+                  )}
                 <QuotationHistory 
                     history={history}
                     onView={handleViewHistory}
@@ -132,18 +146,6 @@ const App: React.FC = () => {
               <Spinner />
               <p className="mt-6 text-xl font-medium text-slate-700">Generando cotización inteligente...</p>
               <p className="text-slate-500 mt-2 h-6 transition-opacity duration-500">{currentLoadingMessage}</p>
-            </div>
-          )}
-
-          {error && !isLoading && !quotationData && (
-             <div className="text-center p-8 bg-red-50 border border-red-200 rounded-xl shadow-md">
-              <p className="text-red-600 font-semibold">{error}</p>
-              <button
-                onClick={() => setError(null)}
-                className="mt-4 px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
-              >
-                Entendido
-              </button>
             </div>
           )}
 
