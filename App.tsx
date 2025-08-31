@@ -66,7 +66,7 @@ const App: React.FC = () => {
 
     } catch (e) {
       console.error(e);
-      setApiError('Hubo un error al generar la cotización. Por favor, revisa la consola para más detalles y asegúrate que la clave de API está configurada.');
+      setApiError('Ocurrió un error al generar la cotización. Esto puede deberse a una alta demanda o a un fallo temporal del servicio. Por favor, inténtalo de nuevo más tarde.');
     } finally {
       setIsLoading(false);
     }
