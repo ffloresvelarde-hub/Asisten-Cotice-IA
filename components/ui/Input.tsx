@@ -1,12 +1,7 @@
 import React from 'react';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  id: string;
-  error?: string | null;
-}
-
-export const Input: React.FC<InputProps> = ({ label, id, error, ...props }) => {
+// FIX: Added a default value to the error prop to make it optional.
+export const Input = ({ label, id, error = null, ...props }) => {
   const errorClasses = error
     ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
     : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500';

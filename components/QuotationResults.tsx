@@ -1,18 +1,10 @@
-
 import React, { useState } from 'react';
-import type { FullQuotationResponse, Scenario, CostBreakdown, QuotationResult, QuotationFormState, DocumentType } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { DonutChart } from './ui/DonutChart';
 import { DocumentGeneratorModal } from './DocumentGeneratorModal';
 
-interface QuotationResultsProps {
-  results: FullQuotationResponse;
-  formData: QuotationFormState;
-  onReset: () => void;
-}
-
-const formatCurrency = (value: number) => {
+const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -20,9 +12,9 @@ const formatCurrency = (value: number) => {
     }).format(value);
 };
 
-const IncotermIcon: React.FC<{ incoterm: string }> = ({ incoterm }) => {
+const IncotermIcon = ({ incoterm }) => {
     const baseClasses = "w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg";
-    const colors: { [key: string]: string } = {
+    const colors = {
         'EXW': 'bg-amber-500',
         'FOB': 'bg-sky-600',
         'CIF': 'bg-emerald-500',
@@ -30,9 +22,9 @@ const IncotermIcon: React.FC<{ incoterm: string }> = ({ incoterm }) => {
     return <div className={`${baseClasses} ${colors[incoterm]}`}>{incoterm}</div>;
 };
 
-const CourierIcon: React.FC = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 12H4m16 0-4 4m4-4-4-4M4 12l4 4m-4-4 4-4" /><path d="M5 8h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /></svg>;
+const CourierIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 12H4m16 0-4 4m4-4-4-4M4 12l4 4m-4-4 4-4" /><path d="M5 8h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /></svg>;
 
-const FreightIcon: React.FC<{ type: string }> = ({ type }) => {
+const FreightIcon = ({ type }) => {
     if (type === 'Marítimo') {
         return <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
     }
@@ -45,7 +37,7 @@ const FreightIcon: React.FC<{ type: string }> = ({ type }) => {
     return null;
 }
 
-const RecommendationCard: React.FC<{ title: string; content: string; icon: React.ReactNode }> = ({ title, content, icon }) => (
+const RecommendationCard = ({ title, content, icon }) => (
     <Card className="bg-slate-100/70 border border-slate-200 !shadow-md">
         <div className="flex items-start gap-4">
             <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
@@ -62,7 +54,7 @@ const RecommendationCard: React.FC<{ title: string; content: string; icon: React
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>;
 const CrossIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
 
-const ScenarioCard: React.FC<{ scenario: Scenario }> = ({ scenario }) => {
+const ScenarioCard = ({ scenario }) => {
     const { option, rank, isRecommended, costoEstimado, tiempoEstimado, analisisCualitativo, pros, contras } = scenario;
 
     return (
@@ -122,7 +114,7 @@ const ScenarioCard: React.FC<{ scenario: Scenario }> = ({ scenario }) => {
     );
 };
 
-const COST_COLORS: Record<keyof CostBreakdown, string> = {
+const COST_COLORS = {
     valorProduccion: '#0ea5e9', // sky-500
     transporteLocal: '#f97316', // orange-500
     gastosAduanaExportacion: '#8b5cf6', // violet-500
@@ -130,7 +122,7 @@ const COST_COLORS: Record<keyof CostBreakdown, string> = {
     seguro: '#10b981', // emerald-500
 };
 
-const COST_LABELS: Record<keyof CostBreakdown, string> = {
+const COST_LABELS = {
     valorProduccion: 'Producción',
     transporteLocal: 'T. Local',
     gastosAduanaExportacion: 'Aduanas',
@@ -139,16 +131,16 @@ const COST_LABELS: Record<keyof CostBreakdown, string> = {
 };
 
 
-export const QuotationResults: React.FC<QuotationResultsProps> = ({ results, formData, onReset }) => {
+export const QuotationResults = ({ results, formData, onReset }) => {
   const { quotations, recommendations, scenarioAnalysis } = results;
 
-  const [modalState, setModalState] = useState<{
-      isOpen: boolean;
-      type: DocumentType | null;
-      quotation: QuotationResult | null;
-  }>({ isOpen: false, type: null, quotation: null });
+  const [modalState, setModalState] = useState({
+      isOpen: false,
+      type: null,
+      quotation: null,
+  });
 
-  const handleOpenModal = (type: DocumentType, quotation: QuotationResult) => {
+  const handleOpenModal = (type, quotation) => {
       setModalState({ isOpen: true, type, quotation });
   };
 
@@ -168,9 +160,9 @@ export const QuotationResults: React.FC<QuotationResultsProps> = ({ results, for
            const chartData = Object.entries(result.desgloseCostos)
                 .filter(([, value]) => value > 0)
                 .map(([key, value]) => ({
-                    label: COST_LABELS[key as keyof CostBreakdown],
+                    label: COST_LABELS[key],
                     value: value,
-                    color: COST_COLORS[key as keyof CostBreakdown]
+                    color: COST_COLORS[key]
                 }));
           
           return (

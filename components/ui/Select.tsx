@@ -1,11 +1,6 @@
 import React from 'react';
 
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  children: React.ReactNode;
-  id: string;
-}
-
-export const Select: React.FC<SelectProps> = ({ children, id, className, ...props }) => {
+export const Select = ({ children, id, className, ...props }) => {
   return (
     <select
       id={id}

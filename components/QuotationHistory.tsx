@@ -1,15 +1,8 @@
 import React from 'react';
-import type { HistoryEntry } from '../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 
-interface QuotationHistoryProps {
-  history: HistoryEntry[];
-  onView: (entry: HistoryEntry) => void;
-  onClear: () => void;
-}
-
-export const QuotationHistory: React.FC<QuotationHistoryProps> = ({ history, onView, onClear }) => {
+export const QuotationHistory = ({ history, onView, onClear }) => {
   if (history.length === 0) {
     return null;
   }

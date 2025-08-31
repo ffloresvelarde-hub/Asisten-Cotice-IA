@@ -1,29 +1,23 @@
 import React, { useState } from 'react';
-import type { QuotationFormState, Incoterm } from '../types';
 import { Card } from './ui/Card';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { Select } from './ui/Select';
 import { TariffCodeAssistant } from './TariffCodeAssistant';
 
-interface QuotationFormProps {
-  onSubmit: (data: QuotationFormState) => void;
-  initialError: string | null;
-}
+const INCOTERM_OPTIONS = ['EXW', 'FOB', 'CIF'];
 
-const INCOTERM_OPTIONS: Incoterm[] = ['EXW', 'FOB', 'CIF'];
-
-const validateTariffCode = (code: string): boolean => {
+const validateTariffCode = (code) => {
   // Validates format XXXX.XX.XX.XX based on the initial value and common Peruvian HS codes.
   const tariffCodeRegex = /^\d{4}\.\d{2}\.\d{2}\.\d{2}$/;
   return tariffCodeRegex.test(code);
 };
-const validateRUC = (ruc: string): boolean => /^\d{11}$/.test(ruc);
-const validateEmail = (email: string): boolean => /^\S+@\S+\.\S+$/.test(email);
+const validateRUC = (ruc) => /^\d{11}$/.test(ruc);
+const validateEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
 
 
-export const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, initialError }) => {
-  const [formData, setFormData] = useState<QuotationFormState>({
+export const QuotationForm = ({ onSubmit, initialError }) => {
+  const [formData, setFormData] = useState({
     product: 'Palta Hass',
     tariffCode: '0804.40.00.00',
     destinationCountry: 'España',
@@ -37,15 +31,10 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, initialE
     correo: '',
   });
 
-  const [formErrors, setFormErrors] = useState<{ 
-      tariffCode?: string,
-      empresa?: string;
-      ruc?: string;
-      direccion?: string;
-      correo?: string;
-    }>({});
+  // FIX: Typed formErrors state to allow for dynamic string keys.
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     const isNumberField = ['quantity', 'productionValue'].includes(name);
 
@@ -54,10 +43,10 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, initialE
       [name]: isNumberField ? parseFloat(value) || 0 : value,
     }));
     
-    const clearError = (fieldName: string) => {
+    const clearError = (fieldName) => {
         setFormErrors(prev => {
             const newErrors = { ...prev };
-            delete newErrors[fieldName as keyof typeof formErrors];
+            delete newErrors[fieldName];
             return newErrors;
         });
     };
@@ -80,7 +69,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, initialE
     }
   };
 
-  const handleIncotermChange = (incoterm: Incoterm) => {
+  const handleIncotermChange = (incoterm) => {
     setFormData(prev => {
         const newIncoterms = prev.incoterms.includes(incoterm)
             ? prev.incoterms.filter(i => i !== incoterm)
@@ -89,7 +78,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, initialE
     });
   }
 
-  const handleTariffCodeFound = (code: string) => {
+  const handleTariffCodeFound = (code) => {
     setFormData(prev => ({ ...prev, tariffCode: code }));
     setFormErrors(prev => {
         const newErrors = { ...prev };
@@ -98,10 +87,11 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({ onSubmit, initialE
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
-    const errors: typeof formErrors = {};
+    // FIX: Typed errors object to allow for dynamic string keys.
+    const errors: Record<string, string> = {};
     if (!formData.empresa.trim()) errors.empresa = "El nombre de la empresa es requerido.";
     if (!formData.ruc.trim()) {
         errors.ruc = "El RUC es requerido.";

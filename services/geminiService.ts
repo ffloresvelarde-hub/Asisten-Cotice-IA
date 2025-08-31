@@ -1,9 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { QuotationFormState, FullQuotationResponse, QuotationResult, Incoterm, Scenario, DocumentGenerationData, DocumentType } from '../types';
 
 // Defensive initialization for browser environments where process.env might not be polyfilled
 // or the API_KEY is not injected during build.
-let ai: GoogleGenAI | undefined;
+let ai;
 
 // The build environment (like Netlify) is expected to replace process.env.API_KEY.
 // If it doesn't, this will be undefined, and `ai` will remain undefined,
@@ -32,7 +31,7 @@ const checkAiInitialization = () => {
  * @param error The catched error.
  * @param context A string describing where the error occurred (e.g., 'generateQuotation').
  */
-const handleGeminiError = (error: unknown, context: string): never => {
+const handleGeminiError = (error, context) => {
     console.error(`Error during Gemini API call in ${context}:`, error);
     if (error instanceof Error) {
         // Check for common API key-related error messages. A 400 error often indicates a problem with the API key.
@@ -134,7 +133,7 @@ const responseSchema = {
 };
 
 
-export const generateQuotation = async (formData: QuotationFormState): Promise<FullQuotationResponse> => {
+export const generateQuotation = async (formData) => {
   checkAiInitialization();
   const { 
     product, tariffCode, destinationCountry, quantity, quantityUnit, productionValue, incoterms,
@@ -188,7 +187,7 @@ export const generateQuotation = async (formData: QuotationFormState): Promise<F
   `;
 
   try {
-    const response = await ai!.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -198,20 +197,20 @@ export const generateQuotation = async (formData: QuotationFormState): Promise<F
     });
 
     const jsonText = response.text.trim();
-    const parsedResponse = JSON.parse(jsonText) as FullQuotationResponse;
+    const parsedResponse = JSON.parse(jsonText);
 
     // Sort to ensure a consistent order: EXW, FOB, CIF and then by freight type
-    const incotermOrder: Record<Incoterm, number> = { 'EXW': 1, 'FOB': 2, 'CIF': 3 };
+    const incotermOrder = { 'EXW': 1, 'FOB': 2, 'CIF': 3 };
     const fleteOrder = { 'Marítimo': 1, 'Aéreo': 2, 'No Aplica': 0 };
 
-    parsedResponse.quotations.sort((a: QuotationResult, b: QuotationResult) => {
+    parsedResponse.quotations.sort((a, b) => {
         const incotermDiff = incotermOrder[a.incoterm] - incotermOrder[b.incoterm];
         if (incotermDiff !== 0) return incotermDiff;
         return fleteOrder[a.flete] - fleteOrder[b.flete];
     });
 
     if (parsedResponse.scenarioAnalysis) {
-        parsedResponse.scenarioAnalysis.sort((a: Scenario, b: Scenario) => a.rank - b.rank);
+        parsedResponse.scenarioAnalysis.sort((a, b) => a.rank - b.rank);
     }
 
     return parsedResponse;
@@ -221,7 +220,7 @@ export const generateQuotation = async (formData: QuotationFormState): Promise<F
   }
 };
 
-export const getTariffCodeForProduct = async (productDescription: string): Promise<string> => {
+export const getTariffCodeForProduct = async (productDescription) => {
   checkAiInitialization();
   const prompt = `
     Actúa como un experto en aduanas de Perú. 
@@ -231,7 +230,7 @@ export const getTariffCodeForProduct = async (productDescription: string): Promi
     Descripción del producto: "${productDescription}"
   `;
   try {
-    const response = await ai!.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
     });
@@ -251,9 +250,9 @@ export const getTariffCodeForProduct = async (productDescription: string): Promi
 
 
 export const generateDocumentHtml = async (
-    documentType: DocumentType,
-    data: DocumentGenerationData
-): Promise<string> => {
+    documentType,
+    data
+) => {
     checkAiInitialization();
     const documentTitle = documentType === 'commercialInvoice' ? 'Factura Comercial' : 'Packing List';
     const mainPrompt = `
@@ -314,7 +313,7 @@ export const generateDocumentHtml = async (
     `;
 
     try {
-        const response = await ai!.models.generateContent({
+        const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: mainPrompt,
         });

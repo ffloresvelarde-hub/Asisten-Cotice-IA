@@ -1,13 +1,7 @@
-
 import React from 'react';
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label: string;
-  id: string;
-  error?: string | null;
-}
-
-export const Textarea: React.FC<TextareaProps> = ({ label, id, error, ...props }) => {
+// FIX: Added a default value to the error prop to make it optional.
+export const Textarea = ({ label, id, error = null, ...props }) => {
   const errorClasses = error
     ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
     : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500';

@@ -4,18 +4,9 @@ import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
 import { Spinner } from './ui/Spinner';
-import type { QuotationFormState, QuotationResult, DocumentType, DocumentGenerationData } from '../types';
 import { generateDocumentHtml } from '../services/geminiService';
 
-interface DocumentGeneratorModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    documentType: DocumentType;
-    quotationData: QuotationResult;
-    formData: QuotationFormState;
-}
-
-export const DocumentGeneratorModal: React.FC<DocumentGeneratorModalProps> = ({
+export const DocumentGeneratorModal = ({
     isOpen,
     onClose,
     documentType,
@@ -36,7 +27,7 @@ export const DocumentGeneratorModal: React.FC<DocumentGeneratorModalProps> = ({
     });
     
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState(null);
 
     const title = useMemo(() =>
         documentType === 'commercialInvoice' ? 'Generar Factura Comercial' : 'Generar Packing List',
@@ -47,7 +38,7 @@ export const DocumentGeneratorModal: React.FC<DocumentGeneratorModalProps> = ({
         [documentType]
     );
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, category: 'importer' | 'packaging' | 'shipment') => {
+    const handleInputChange = (e, category) => {
         const { name, value } = e.target;
         const isNumber = ['packageCount', 'netWeightKg', 'grossWeightKg'].includes(name);
 
@@ -64,7 +55,7 @@ export const DocumentGeneratorModal: React.FC<DocumentGeneratorModalProps> = ({
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
@@ -78,7 +69,7 @@ export const DocumentGeneratorModal: React.FC<DocumentGeneratorModalProps> = ({
         }
         newTab.document.write('<html><body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;"><h1>Generando documento, por favor espera...</h1></body></html>');
 
-        const fullData: DocumentGenerationData = {
+        const fullData = {
             exporter: formData,
             importer,
             shipment: {

@@ -5,15 +5,10 @@ import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { Spinner } from './ui/Spinner';
 
-interface TariffCodeAssistantProps {
-  productName: string;
-  onCodeFound: (code: string) => void;
-}
-
-export const TariffCodeAssistant: React.FC<TariffCodeAssistantProps> = ({ productName, onCodeFound }) => {
+export const TariffCodeAssistant = ({ productName, onCodeFound }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState(null);
     const [productDescription, setProductDescription] = useState(productName);
 
     useEffect(() => {
@@ -56,12 +51,17 @@ export const TariffCodeAssistant: React.FC<TariffCodeAssistantProps> = ({ produc
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Asistente de Partida Arancelaria">
                 <div className="space-y-4">
                     <p className="text-slate-600">Describe tu producto y la IA encontrará la partida arancelaria más probable para la aduana peruana.</p>
+                    {/* FIX: Pass error state to Input and clear it on change. */}
                     <Input 
                         label="Descripción del Producto"
                         id="product-description"
                         value={productDescription}
-                        onChange={(e) => setProductDescription(e.target.value)}
+                        onChange={(e) => {
+                            setProductDescription(e.target.value);
+                            setError(null);
+                        }}
                         placeholder="Ej: Palta Hass fresca de alta calidad"
+                        error={error}
                     />
                     {error && <p className="text-red-600 text-sm">{error}</p>}
 

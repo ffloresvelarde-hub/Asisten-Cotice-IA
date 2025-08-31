@@ -1,14 +1,14 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { QuotationForm } from './components/QuotationForm';
 import { QuotationResults } from './components/QuotationResults';
 import { Spinner } from './components/ui/Spinner';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import type { QuotationFormState, FullQuotationResponse, HistoryEntry } from './types';
 import { generateQuotation } from './services/geminiService';
 import { QuotationHistory } from './components/QuotationHistory';
 import { getHistory, addHistoryEntry, clearHistory } from './services/localStorageService';
+// FIX: Import types for state to ensure type safety.
+import type { QuotationFormState, FullQuotationResponse } from './types';
 
 const loadingMessages = [
     'Analizando datos del producto...',
@@ -17,18 +17,19 @@ const loadingMessages = [
     'Formulando recomendaciones estratégicas...'
 ];
 
-const App: React.FC = () => {
+const App = () => {
+  // FIX: Typed state to avoid 'any' type and allow for better type inference downstream.
   const [quotationData, setQuotationData] = useState<FullQuotationResponse | null>(null);
   const [currentFormData, setCurrentFormData] = useState<QuotationFormState | null>(null);
-  const [history, setHistory] = useState<HistoryEntry[]>(() => getHistory());
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [history, setHistory] = useState(() => getHistory());
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
+  const [validationError, setValidationError] = useState(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
 
   useEffect(() => {
     let messageIndex = 0;
-    let interval: ReturnType<typeof setInterval> | null = null;
+    let interval = null;
     if (isLoading) {
         setCurrentLoadingMessage(loadingMessages[0]);
         interval = setInterval(() => {
@@ -44,7 +45,7 @@ const App: React.FC = () => {
     };
   }, [isLoading]);
 
-  const handleFormSubmit = useCallback(async (formData: QuotationFormState) => {
+  const handleFormSubmit = useCallback(async (formData) => {
     if (formData.incoterms.length === 0) {
         setValidationError("Por favor, selecciona al menos un Incoterm para cotizar.");
         return;
@@ -60,7 +61,7 @@ const App: React.FC = () => {
       setQuotationData(results);
       setCurrentFormData(formData);
       
-      const newEntry: HistoryEntry = { id: Date.now(), formData, result: results };
+      const newEntry = { id: Date.now(), formData, result: results };
       const updatedHistory = addHistoryEntry(newEntry);
       setHistory(updatedHistory);
 
@@ -83,7 +84,7 @@ const App: React.FC = () => {
     setValidationError(null);
   }, []);
 
-  const handleViewHistory = useCallback((entry: HistoryEntry) => {
+  const handleViewHistory = useCallback((entry) => {
     setQuotationData(entry.result);
     setCurrentFormData(entry.formData);
     setApiError(null);

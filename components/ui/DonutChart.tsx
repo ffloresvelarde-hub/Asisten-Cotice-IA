@@ -1,16 +1,6 @@
 import React from 'react';
 
-interface DonutChartProps {
-  data: {
-    label: string;
-    value: number;
-    color: string;
-  }[];
-  size?: number;
-  strokeWidth?: number;
-}
-
-export const DonutChart: React.FC<DonutChartProps> = ({ data, size = 120, strokeWidth = 18 }) => {
+export const DonutChart = ({ data, size = 120, strokeWidth = 18 }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const totalValue = data.reduce((sum, item) => sum + item.value, 0);
