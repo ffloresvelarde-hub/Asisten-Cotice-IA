@@ -1,24 +1,11 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { QuotationFormData, QuotationResultsData } from '../types';
+import type { Handler } from "@netlify/functions";
 
-// --- Detección de Entorno y Configuración ---
-// Comprueba si la API_KEY está disponible en el objeto window, que es como AI Studio la provee.
-const API_KEY = (window as any).process?.env?.API_KEY;
-const IS_DEV_ENVIRONMENT = !!API_KEY;
+// Initialize the Gemini AI client on the server.
+// The API_KEY is securely accessed from Netlify's environment variables.
+const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
 
-// Inicializa el cliente de IA solo si estamos en el entorno de desarrollo (AI Studio).
-let ai: GoogleGenAI | null = null;
-if (IS_DEV_ENVIRONMENT) {
-    if (API_KEY) {
-        ai = new GoogleGenAI({ apiKey: API_KEY });
-    } else {
-        // Esto sirve como una advertencia si el entorno de desarrollo no está configurado correctamente.
-        console.error("API_KEY no encontrada en el entorno de AI Studio (window.process.env.API_KEY).");
-    }
-}
-
-// --- Esquemas y Prompts (para ejecución en el cliente) ---
-// Se duplican de la función de Netlify para permitir la ejecución en el cliente en AI Studio.
+// --- Schema Definition (copied from original service) ---
 const responseSchema = {
     type: Type.OBJECT,
     properties: {
@@ -77,6 +64,8 @@ const responseSchema = {
     required: ["quotations", "recommendations", "scenarioAnalysis"]
 };
 
+
+// --- Prompt Generators (copied and adapted from original service) ---
 const getQuotationPrompt = (formData) => {
     const { product, tariffCode, destinationCountry, quantity, quantityUnit, productionValue, incoterms, empresa, ruc, direccion, correo } = formData;
     const incotermsString = incoterms.join(', ');
@@ -132,95 +121,89 @@ const getDocumentPrompt = (documentType, data) => {
         Estructura: HTML completo con un botón de "Imprimir" que se oculte al imprimir. Devuelve únicamente el código HTML.`;
 };
 
+// --- Main Handler for the Netlify Function ---
+const handler: Handler = async (event) => {
+    if (!ai) {
+        console.error("Gemini AI client not initialized. API_KEY missing on server.");
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "La configuración del servidor está incompleta. El servicio de IA no está disponible." }),
+        };
+    }
+    
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    }
 
-// --- Implementación para Netlify (Producción) ---
-const callApiProxy = async (action: string, payload: object) => {
     try {
-        const response = await fetch('/.netlify/functions/gemini-api', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, payload }),
-        });
+        const { action, payload } = JSON.parse(event.body || '{}');
+        let result;
 
-        const responseData = await response.json();
+        switch (action) {
+            case 'generateQuotation': {
+                const prompt = getQuotationPrompt(payload.formData);
+                const response = await ai.models.generateContent({
+                  model: "gemini-2.5-flash",
+                  contents: prompt,
+                  config: { responseMimeType: "application/json", responseSchema: responseSchema }
+                });
 
-        if (!response.ok) {
-            throw new Error(responseData.error || `El servidor respondió con un error: ${response.status}`);
-        }
-
-        return responseData;
-    } catch (error) {
-        console.error(`Error al llamar a la acción de la API "${action}":`, error);
-        if (error instanceof Error) {
-            if (error.message.includes('Failed to fetch')) {
-                throw new Error('No se pudo conectar con el servidor. Por favor, revisa tu conexión a internet.');
+                const parsedResponse = JSON.parse(response.text.trim());
+                
+                const incotermOrder = { 'EXW': 1, 'FOB': 2, 'CIF': 3 };
+                const fleteOrder = { 'Marítimo': 1, 'Aéreo': 2, 'No Aplica': 0 };
+                parsedResponse.quotations.sort((a, b) => {
+                    const incotermDiff = incotermOrder[a.incoterm] - incotermOrder[b.incoterm];
+                    if (incotermDiff !== 0) return incotermDiff;
+                    return fleteOrder[a.flete] - fleteOrder[b.flete];
+                });
+                if (parsedResponse.scenarioAnalysis) {
+                    parsedResponse.scenarioAnalysis.sort((a, b) => a.rank - b.rank);
+                }
+                result = parsedResponse;
+                break;
             }
-            throw error;
+            case 'getTariffCodeForProduct': {
+                const prompt = getTariffCodePrompt(payload.productDescription);
+                const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+                const code = response.text.trim();
+                if (!/^\d{4}\.\d{2}\.\d{2}\.\d{2}$/.test(code)) {
+                    throw new Error(`Formato de partida arancelaria inválido recibido de la IA.`);
+                }
+                result = code;
+                break;
+            }
+            case 'generateDocumentHtml': {
+                const { documentType, data } = payload;
+                const prompt = getDocumentPrompt(documentType, data);
+                const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+                result = response.text.trim();
+                break;
+            }
+            default:
+                return { statusCode: 400, body: JSON.stringify({ error: "Acción no válida" }) };
         }
-        throw new Error('Ocurrió un error inesperado al comunicarse con el servidor.');
-    }
-};
 
-// --- Helper para ordenar resultados (usado en ambos entornos) ---
-const sortResults = (parsedResponse: QuotationResultsData) => {
-    const incotermOrder = { 'EXW': 1, 'FOB': 2, 'CIF': 3 };
-    const fleteOrder = { 'Marítimo': 1, 'Aéreo': 2, 'No Aplica': 0 };
-    if (parsedResponse.quotations) {
-      parsedResponse.quotations.sort((a, b) => {
-          const incotermDiff = incotermOrder[a.incoterm] - incotermOrder[b.incoterm];
-          if (incotermDiff !== 0) return incotermDiff;
-          return fleteOrder[a.flete] - fleteOrder[b.flete];
-      });
-    }
-    if (parsedResponse.scenarioAnalysis) {
-        parsedResponse.scenarioAnalysis.sort((a, b) => a.rank - b.rank);
-    }
-    return parsedResponse;
-};
+        return {
+            statusCode: 200,
+            body: JSON.stringify(result),
+            headers: { 'Content-Type': 'application/json' }
+        };
 
-
-// --- Funciones Unificadas Exportadas ---
-
-export const generateQuotation = async (formData: QuotationFormData): Promise<QuotationResultsData> => {
-    if (IS_DEV_ENVIRONMENT) {
-        if (!ai) throw new Error("La API Key no está configurada en el entorno de despliegue (Netlify). Por favor, ve a 'Site configuration' > 'Build & deploy' > 'Environment' y asegúrate de que la variable de entorno 'API_KEY' esté creada y con el valor correcto. Después de agregarla, debes hacer un nuevo 'deploy' para que los cambios se apliquen.");
-        const prompt = getQuotationPrompt(formData);
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: { responseMimeType: "application/json", responseSchema: responseSchema }
-        });
-        return sortResults(JSON.parse(response.text.trim()));
-    } else {
-        return callApiProxy('generateQuotation', { formData });
-    }
-};
-
-export const getTariffCodeForProduct = async (productDescription: string): Promise<string> => {
-    if (IS_DEV_ENVIRONMENT) {
-        if (!ai) throw new Error("La API Key no está configurada para el entorno de desarrollo (AI Studio).");
-        const prompt = getTariffCodePrompt(productDescription);
-        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-        const code = response.text.trim();
-        if (!/^\d{4}\.\d{2}\.\d{2}\.\d{2}$/.test(code)) {
-            throw new Error(`Formato de partida arancelaria inválido recibido de la IA: "${code}"`);
+    } catch (error) {
+        console.error("Error executing Gemini API call in Netlify function:", error);
+        let errorMessage = 'Ocurrió un error interno en el servidor.';
+        if (error instanceof Error) {
+            if (error.message.includes('400') || error.message.toLowerCase().includes('api key not valid')) {
+                errorMessage = 'La API Key configurada en el servidor no es válida o está mal configurada.';
+            } else if (error.message.includes('429')) {
+                errorMessage = 'Se ha excedido la cuota de uso de la API (límite de peticiones por minuto). Por favor, inténtalo más tarde.';
+            } else {
+                 errorMessage = error.message;
+            }
         }
-        return code;
-    } else {
-        return callApiProxy('getTariffCodeForProduct', { productDescription });
+        return { statusCode: 500, body: JSON.stringify({ error: errorMessage }) };
     }
 };
 
-export const generateDocumentHtml = async (
-    documentType: 'commercialInvoice' | 'packingList',
-    data: any
-): Promise<string> => {
-    if (IS_DEV_ENVIRONMENT) {
-        if (!ai) throw new Error("La API Key no está configurada para el entorno de desarrollo (AI Studio).");
-        const prompt = getDocumentPrompt(documentType, data);
-        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-        return response.text.trim();
-    } else {
-        return callApiProxy('generateDocumentHtml', { documentType, data });
-    }
-};
+export { handler };
