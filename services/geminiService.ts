@@ -142,13 +142,40 @@ const callApiProxy = async (action: string, payload: object) => {
             body: JSON.stringify({ action, payload }),
         });
 
-        const responseData = await response.json();
-
+        // --- FIX: Robust Response Handling ---
+        // If the response is not OK, handle the error gracefully.
         if (!response.ok) {
-            throw new Error(responseData.error || `El servidor respondió con un error: ${response.status}`);
+            // Netlify functions can time out (10s limit) and return an HTML error page or empty response.
+            // Try to get text first to see what the server actually sent.
+            const errorText = await response.text();
+            try {
+                // Check if the server sent a JSON error object.
+                const errorJson = JSON.parse(errorText);
+                throw new Error(errorJson.error || `El servidor respondió con un error: ${response.status}`);
+            } catch (e) {
+                // If parsing fails, the server sent a non-JSON error (like a timeout page).
+                if (response.status === 504) { // Gateway Timeout
+                    throw new Error('El servidor tardó demasiado en responder (Timeout). Por favor, intenta de nuevo.');
+                }
+                throw new Error(`El servidor respondió con un error inesperado (código ${response.status}).`);
+            }
         }
 
-        return responseData;
+        // The response might be successful but empty.
+        const responseText = await response.text();
+        if (!responseText) {
+            throw new Error('El servidor devolvió una respuesta vacía, lo que puede indicar un timeout.');
+        }
+
+        // Now, safely try to parse the JSON.
+        try {
+            return JSON.parse(responseText);
+        } catch (e) {
+            // This catches "Unexpected end of JSON input" if the body is malformed but not empty.
+            console.error("Error al parsear JSON:", responseText);
+            throw new Error('La respuesta del servidor no es un formato JSON válido.');
+        }
+
     } catch (error) {
         console.error(`Error al llamar a la acción de la API "${action}":`, error);
         if (error instanceof Error) {
@@ -192,7 +219,8 @@ export const generateQuotation = async (formData: QuotationFormData): Promise<Qu
         });
         return sortResults(JSON.parse(response.text.trim()));
     } else {
-        return callApiProxy('generateQuotation', { formData });
+        const results = await callApiProxy('generateQuotation', { formData });
+        return sortResults(results);
     }
 };
 
@@ -207,7 +235,10 @@ export const getTariffCodeForProduct = async (productDescription: string): Promi
         }
         return code;
     } else {
-        return callApiProxy('getTariffCodeForProduct', { productDescription });
+        const result = await callApiProxy('getTariffCodeForProduct', { productDescription });
+        // Since the server function returns a primitive string, it might not be wrapped in JSON.
+        // We'll trust the server function's validation.
+        return result as string;
     }
 };
 
@@ -221,6 +252,7 @@ export const generateDocumentHtml = async (
         const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
         return response.text.trim();
     } else {
-        return callApiProxy('generateDocumentHtml', { documentType, data });
+        const result = await callApiProxy('generateDocumentHtml', { documentType, data });
+        return result as string;
     }
 };
