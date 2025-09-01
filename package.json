@@ -2,7 +2,13 @@
   "name": "cotizador-de-exportacion-agroindustrial-peru",
   "version": "1.0.0",
   "description": "Una aplicación para generar cotizaciones de exportación para productos agroindustriales peruanos, calculando costos basados en Incoterms y tipo de flete.",
+  "scripts": {
+    "build": "esbuild index.tsx --bundle --outfile=dist/index.js --format=esm --jsx=automatic && cp index.html dist/"
+  },
   "dependencies": {
     "@google/genai": "^1.14.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0"
   }
 }
